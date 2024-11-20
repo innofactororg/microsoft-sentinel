@@ -17,7 +17,7 @@ concurrency:
 permissions: {}
 
 jobs:
-  update-sources:
+  update:
     name: 🏃 Update
     runs-on: ubuntu-latest
     permissions:

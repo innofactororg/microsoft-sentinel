@@ -18,7 +18,7 @@ concurrency:
 permissions: {}
 
 jobs:
-  update-sources:
+  publish:
     name: 🏃 Publish
     runs-on: ubuntu-latest
     steps:
@@ -182,12 +182,12 @@ jobs:
         shell: bash
         working-directory: library
 
-    - name: Upload artifacts
-      if: steps.process-changes.outputs.changed == 'true'
-      uses: actions/upload-artifact@184d73b71b93c222403b2e7f1ffebe4508014249 #v4.4.3 + 2 commits
-      with:
-        if-no-files-found: ignore
-        name: changes
-        path: |
-          ${{ github.workspace }}/library/Content/external.csv
-          ${{ github.workspace }}/library/Content/changes.md
+      - name: Upload artifacts
+        if: steps.process-changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@184d73b71b93c222403b2e7f1ffebe4508014249 #v4.4.3 + 2 commits
+        with:
+          if-no-files-found: ignore
+          name: changes
+          path: |
+            ${{ github.workspace }}/library/Content/external.csv
+            ${{ github.workspace }}/library/Content/changes.md
