@@ -1,19 +1,24 @@
-# Microsoft Sentinel and Microsoft 365 Defender
+# Microsoft Sentinel and Microsoft Defender XDR
 
-This fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel) repository has been created for the following reasons:
+- [Branch: master](#branch-master)
+  - [Branch protection for master](#branch-protection-for-master)
+- [Branch: approved](#branch-approved)
+  - [Branch protection for approved](#branch-protection-for-approved)
+  - [Workflow: Publish Content Changes](#workflow-publish-content-changes)
+  - [Workflow: Update Approved Content](#workflow-update-approved-content)
+
+## Branch: master
+
+This fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel) repository exist for the following reasons:
 
 - Allow us to contribute changes and new content to the community.
 - Use automation to process community content.
-- Approve content for use by the Innofactor MDR Service.
+- Approve content for use by the
+  [Innofactor MDR Service](https://github.com/innofactororg/innofactor-mdr).
 
 Only the `master` branch has been forked. No changes will be made by us to this branch, but it will be kept up to date with the upstream repository on a daily basis.
 
-The approval of content depend on the following components:
-
-- The `approved` branch. Stores the automation workflows and the approved files.
-- The [external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv) file. This is the review file with content that is approved, ignored or requires a review.
-- The [Publish Content Changes](#workflow-publish-content-changes) workflow. This workflow ensures that changes are published as a pull request for review in the [microsoft-sentinel-library](https://github.com/innofactororg/microsoft-sentinel-library) repository.
-- The [Update Approved Content](#workflow-update-approved-content) workflow. This workflow ensures that approved files exist in the `approved` branch.
+### Branch protection for master
 
 The `default` branch is protected by the following rules:
 
@@ -31,6 +36,15 @@ The `default` branch is protected by the following rules:
 
 ## Branch: approved
 
+This branch exist to store automation workflows and approved content files.
+
+The approval of content depend on the following components:
+
+- The `approved` branch. Stores the automation workflows and the approved files.
+- The [Content/external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv) file. This is the review file with content that is approved, ignored or requires a review.
+- The [Publish Content Changes](#workflow-publish-content-changes) workflow. This workflow ensures that changes are published as a pull request for review in the [microsoft-sentinel-library](https://github.com/innofactororg/microsoft-sentinel-library) repository.
+- The [Update Approved Content](#workflow-update-approved-content) workflow. This workflow ensures that approved files exist in the `approved` branch.
+
 To keep the size as small as possible, the `approved` branch was created as orphan using the following commands:
 
 ```bash
@@ -41,6 +55,8 @@ git commit --allow-empty -m "Initial commit on orphan branch"
 git push origin approved
 git push --set-upstream origin approved
 ```
+
+### Branch protection for approved
 
 The `approved` branch is protected by the following rules:
 
@@ -63,7 +79,7 @@ The `approved` branch is protected by the following rules:
 
 The [Publish-ContentChanges.yml](.github\workflows\Publish-ContentChanges.yml) workflow, will run daily at 05:00 UTC and can be triggered manually.
 
-The purpose is to publish content changes to [external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv) by creating a pull request. The changes are listed in [changes.md](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/changes.md).
+The purpose is to publish content changes to [Content/external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv) by creating a pull request. The changes are listed in [Content/changes.md](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/changes.md).
 
 The sequence of actions performed by the workflow is as follows:
 
@@ -110,7 +126,7 @@ sequenceDiagram
 
 The [Update-ApprovedContent.yml](.github/workflows/Update-ApprovedContent.yml) workflow will run daily at 05:20 UTC and can be triggered manually.
 
-The purpose is to update the `approved` branch and populate it with the approved content by using the data in the [external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv)  file.
+The purpose is to update the `approved` branch and populate it with the approved content by using the data in the [Content/external.csv](https://github.com/innofactororg/microsoft-sentinel-library/blob/main/Content/external.csv)  file.
 
 The sequence of actions performed by the workflow is as follows:
 

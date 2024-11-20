@@ -23,6 +23,7 @@
     "githubPullRequests.pullBranch": "never",
     "hediet.vscode-drawio.resizeImages": null,
     "markdown.extension.orderedList.autoRenumber": false,
+    "markdown.extension.toc.levels": "2..6",
     "powershell.codeFormatting.preset": "OTBS",
     "powershell.powerShellDefaultVersion": "PowerShell (Store)",
     "terminal.integrated.scrollback": 64000,
