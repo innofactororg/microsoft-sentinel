@@ -1,0 +1,193 @@
+name: Publish Content Changes
+#
+# This workflow runs daily at 05:00 UTC and can also be triggered manually.
+#
+# The purpose is to process content changes to Content/external.csv
+# in the microsoft-sentinel-library repository by creating a pull request.
+# The pull request will include a summary of the changes in Content/changes.md.
+#
+on:
+  schedule:
+    - cron: '0 5 * * *' # Every day at 05:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  update-sources:
+    name: 🏃 Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.SENTINEL_MDR_WRITE_APP_ID }}
+          private-key: ${{ secrets.SENTINEL_MDR_WRITE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            microsoft-sentinel
+            microsoft-sentinel-library
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        env:
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "user-id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Set up Git
+        env:
+          USER_ID: ${{ steps.get-user-id.outputs.user-id }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          USER_EMAIL="${USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git config --global user.name "${APP_SLUG}[bot]"
+          git config --global user.email "${USER_EMAIL}"
+        shell: bash
+
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: self
+          ref: master
+
+      - name: Checkout microsoft-sentinel-library
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: library
+          persist-credentials: false
+          ref: main
+          repository: innofactororg/microsoft-sentinel-library
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Add upstream repository
+        run: |
+          git remote add upstream https://github.com/Azure/Azure-Sentinel.git
+          git fetch upstream
+        shell: bash
+        working-directory: self
+
+      - name: Sync fork with upstream master
+        run: |
+          git merge upstream/master
+          git push origin master
+        shell: bash
+        working-directory: self
+
+      - name: Authenticate GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh auth login --with-token
+        shell: bash
+        working-directory: self
+
+      - name: Process Content Changes
+        id: process-changes
+        uses: innofactororg/innofactor-mdr-action/.github/actions/process-changes@v1
+        with:
+          path-library: ${{ github.workspace }}/library
+          source-file: "Content/external.csv"
+          change-file: "Content/changes.md"
+          external-url: "https://github.com/innofactororg/microsoft-sentinel"
+        working-directory: self
+
+      - name: Push microsoft-sentinel-library changes
+        if: steps.process-changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          remoteBranch=$(git ls-remote --heads origin external)
+          if [ -z "$remoteBranch" ]; then
+            echo "Switching to existing branch 'external'..."
+            git switch external
+          } else {
+            echo "Creating and switching to new branch 'external'..."
+            git switch --create external
+          }
+          git add -- "Content/external.csv"
+          git add -- "Content/changes.md"
+          git commit --message="Update external.csv and changes.md"
+          git push -u origin external
+        shell: bash
+        working-directory: library
+
+      - name: Trim changes file if too large
+        if: steps.process-changes.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          file="Content/external-source-changes-latest.md"
+          if [ -f "$file" ] && [ $(wc -c <"$file") -gt 64000 ]; then
+            echo "${file} exceeds 64000 characters, trimming..."
+            head -c 64000 "$file" > "${file}.trimmed"
+            echo "\n\n...Content trimmed due to size limit." >> "${file}.trimmed"
+            mv "${file}.trimmed" "$file"
+          fi
+        shell: bash
+        working-directory: library
+
+      - name: Check for existing pull request
+        if: steps.process-changes.outputs.changed == 'true'
+        id: check-pr
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          pr=$(gh pr list --repo innofactororg/microsoft-sentinel-library \
+            --base main --head external --state 'open' --json number \
+            --jq '.[0].number')
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+        shell: bash
+        working-directory: library
+
+      - name: Update existing Pull Request
+        if: >
+          steps.process-changes.outputs.changed == 'true' &&
+          steps.check-pr.outputs.number != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.check-pr.outputs.number }}
+        run: |
+          file="Content/external-source-changes-latest.md"
+          if [ -f "$file" ]; then
+            gh pr edit $PR_NUMBER --add-label "updated" --body-file $file
+          else
+            gh pr edit $PR_NUMBER --add-label "updated"
+          fi
+        shell: bash
+        working-directory: library
+
+      - name: Create Pull Request
+        if: >
+          steps.process-changes.outputs.changed == 'true' &&
+          steps.check-pr.outputs.number == ''
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          file="Content/external-source-changes-latest.md"
+          branch="external"
+          if [ -f "$file" ]; then
+            gh pr create --title "Update ${branch}" --body-file $file --head $branch --base master
+          else
+            gh pr create --title "Update ${branch}" --body "Automated changes" --head $branch --base master
+          fi
+        shell: bash
+        working-directory: library
+
+    - name: Upload artifacts
+      if: steps.process-changes.outputs.changed == 'true'
+      uses: actions/upload-artifact@184d73b71b93c222403b2e7f1ffebe4508014249 #v4.4.3 + 2 commits
+      with:
+        if-no-files-found: ignore
+        name: changes
+        path: |
+          ${{ github.workspace }}/library/Content/external.csv
+          ${{ github.workspace }}/library/Content/changes.md
