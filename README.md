@@ -22,6 +22,7 @@ The `default` branch is protected by the following rules:
 
 - **Bypass list**:
   - Repository admin (Role)
+  - MDR Sentinel Write (App)
 - **Restrict deletions**
 - **Require linear history**
 - **Require a pull request before merging**:
