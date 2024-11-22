@@ -1,21 +1,17 @@
 # Microsoft Sentinel and Microsoft Defender XDR
 
-- [Branch: master](#branch-master)
-  - [Branch protection for master](#branch-protection-for-master)
-- [Branch: approved](#branch-approved)
-  - [Branch protection for approved](#branch-protection-for-approved)
+## Master Branch
 
-## Branch: master
-
-This fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel) repository exist for the following reasons:
+This is a fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel)
+repository. It exist for the following reasons:
 
 - Allow us to contribute changes and new content to the community.
 - Approve content for use by the
   [Innofactor MDR Service](https://github.com/innofactororg/innofactor-mdr).
 
-Only the `master` branch has been forked. No changes will be made by us to this branch.
+Only the `master` branch has been forked.
 
-### Branch protection for master
+### Master Branch Protection
 
 The `default` branch is protected by the following rules:
 
@@ -31,14 +27,19 @@ The `default` branch is protected by the following rules:
 - **Require status checks to pass**
 - **Block force pushes**
 
-## Branch: approved
+## Approved Branch
 
-This branch exist to store approved content files.
+The `approved` branch exist for the following reasons:
 
-To keep the size as small as possible, the `approved` branch was created as orphan using the following commands:
+- No changes will be made by us to the `master` branch.
+- Keep our approved content files separate from the `master` branch.
+- Keep the size small for checkout in deployment workflows.
+
+The `approved` branch was created as orphan using the following commands:
 
 ```bash
-git clone --filter=tree:0 --no-checkout https://github.com/innofactororg/microsoft-sentinel.git
+url='https://github.com/innofactororg/microsoft-sentinel.git'
+git clone --filter=tree:0 --no-checkout $url
 cd microsoft-sentinel
 git switch --orphan approved
 git commit --allow-empty -m "Initial commit on orphan branch"
@@ -46,7 +47,7 @@ git push origin approved
 git push --set-upstream origin approved
 ```
 
-### Branch protection for approved
+### Approved Branch Protection
 
 The `approved` branch is protected by the following rules:
 
