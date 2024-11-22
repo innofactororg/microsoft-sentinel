@@ -1,8 +1,13 @@
 # Microsoft Sentinel and Microsoft Defender XDR
 
-## Master Branch
+- [About Repository](#about-repository)
+- [Default Branch Protection](#default-branch-protection)
+- [Approved Branch](#approved-branch)
+- [Approved Branch Protection](#approved-branch-protection)
 
-This is a fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel)
+## About Repository
+
+This repository is a fork of the [Azure-Sentinel](https://github.com/Azure/Azure-Sentinel)
 repository. It exist for the following reasons:
 
 - Allow us to contribute changes and new content to the community.
@@ -11,7 +16,7 @@ repository. It exist for the following reasons:
 
 Only the `master` branch has been forked.
 
-### Master Branch Protection
+## Default Branch Protection
 
 The `default` branch is protected by the following rules:
 
@@ -47,7 +52,7 @@ git push origin approved
 git push --set-upstream origin approved
 ```
 
-### Approved Branch Protection
+## Approved Branch Protection
 
 The `approved` branch is protected by the following rules:
 
