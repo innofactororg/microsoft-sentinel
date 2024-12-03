@@ -12,7 +12,7 @@
     "editor.detectIndentation": false,
     "editor.guides.bracketPairs": "active",
     "editor.tabCompletion": "on",
-    "editor.tabSize": 4,
+    "editor.tabSize": 2,
     "files.autoSave": "afterDelay",
     "files.autoSaveDelay": 30000,
     "files.eol": "\n",
@@ -42,10 +42,16 @@
         "editor.defaultFormatter": "ms-azuretools.vscode-bicep"
     },
     "[powershell]": {
-        "editor.defaultFormatter": "ms-vscode.powershell"
+        "editor.defaultFormatter": "ms-vscode.powershell",
+        "editor.tabSize": 4
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "editor.tabSize": 4
     },
     "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "editor.tabSize": 4
     },
     "[yaml]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
