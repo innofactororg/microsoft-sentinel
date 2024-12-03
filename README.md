@@ -1,7 +1,9 @@
 # Microsoft Sentinel and Microsoft Defender XDR
 
 - [About Repository](#about-repository)
-- [Default Branch Protection](#default-branch-protection)
+- [Repository Settings](#repository-settings)
+  - [Default Branch Protection](#default-branch-protection)
+  - [Tag Protection](#tag-protection)
 - [Approved Branch](#approved-branch)
 - [Approved Branch Protection](#approved-branch-protection)
 
@@ -16,7 +18,12 @@ repository. It exist for the following reasons:
 
 Only the `master` branch has been forked.
 
-## Default Branch Protection
+## Repository Settings
+
+This repository allow squash merging with the default commit message set to the
+pull request title and description.
+
+### Default Branch Protection
 
 The `default` branch is protected by the following rules:
 
@@ -26,12 +33,46 @@ The `default` branch is protected by the following rules:
 - **Restrict deletions**
 - **Require linear history**
 - **Require a pull request before merging**:
-  - Required approvals: 1
+  - Required approvals: 2
   - Dismiss stale pull request approvals when new commits are pushed
   - Require approval of the most recent reviewable push
   - Require conversation resolution before merging
 - **Require status checks to pass**
 - **Block force pushes**
+- Restrictions:
+  - Restrict commit metadata:
+    - **Conventional commits** must match a given regex pattern:
+
+      ```text
+      ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)
+      {1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
+      ```
+
+  - Restrict branch names:
+    - **Windows compatible branch names** must match a given regex pattern:
+
+      ```text
+      \A[0-9a-z-_]$
+      ```
+
+### Tag Protection
+
+All tags are protected by the following rules:
+
+- **Bypass list**:
+  - Repository admin (Role)
+- **Restrict deletions**
+- **Require linear history**
+- **Block force pushes**
+- Restrictions:
+  - Restrict tag names:
+    - **Semantic versioning** must match a given regex pattern:
+
+      ```text
+      ^v(([1-9]\d*)|(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|
+      \d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))
+      *))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$
+      ```
 
 ## Approved Branch
 
@@ -48,7 +89,7 @@ url='https://github.com/innofactororg/microsoft-sentinel.git'
 git clone --filter=tree:0 --no-checkout $url
 cd microsoft-sentinel
 git switch --orphan approved
-git commit --allow-empty -m "Initial commit on orphan branch"
+git commit --allow-empty --message "chore: initial commit on orphan branch"
 git push origin approved
 git push --set-upstream origin approved
 ```
@@ -65,9 +106,24 @@ The `approved` branch is protected by the following rules:
 - **Restrict deletions**
 - **Require linear history**
 - **Require a pull request before merging**:
-  - Required approvals: 1
+  - Required approvals: 2
   - Dismiss stale pull request approvals when new commits are pushed
   - Require approval of the most recent reviewable push
   - Require conversation resolution before merging
 - **Require status checks to pass**
 - **Block force pushes**
+- Restrictions:
+  - Restrict commit metadata:
+    - **Conventional commits** must match a given regex pattern:
+
+      ```text
+      ^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)
+      {1}(\([\w\-\.]+\))?(!)?: ([\w ])+([\s\S]*)
+      ```
+
+  - Restrict branch names:
+    - **Windows compatible branch names** must match a given regex pattern:
+
+      ```text
+      \A[0-9a-z-_]$
+      ```
