@@ -1,11 +1,6 @@
 // cSpell:disable
 {
     "bicep.enableSurveys": false,
-    "cSpell.enableFiletypes": [
-        "bicep",
-        "bicep-params",
-        "powershell"
-    ],
     "editor.accessibilitySupport": "off",
     "editor.bracketPairColorization.enabled": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -25,7 +20,6 @@
     "markdown.extension.orderedList.autoRenumber": false,
     "markdown.extension.toc.levels": "2..6",
     "powershell.codeFormatting.preset": "OTBS",
-    "powershell.powerShellDefaultVersion": "PowerShell (Store)",
     "terminal.integrated.scrollback": 64000,
     "workbench.colorTheme": "Default High Contrast",
     "workbench.editor.decorations.badges": true,
