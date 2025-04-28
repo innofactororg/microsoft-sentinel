@@ -1,12 +1,12 @@
-id: 17fe80fe-072f-44d4-b62c-97a5bce56a64
-name: TI map Email entity to PaloAlto CommonSecurityLog
+id: 795d43a3-6edc-4c99-971f-00d05841e5ac
+name: TI map Email entity to OfficeActivity
 description: |
-  'Identifies a match in CommonSecurityLog table from any Email IOC from TI'
+  'Identifies a match in OfficeActivity table from any Email IOC from TI'
 severity: Medium
 requiredDataConnectors:
-  - connectorId: PaloAltoNetworks
+  - connectorId: Office365
     dataTypes:
-      - CommonSecurityLog
+      - OfficeActivity
   - connectorId: ThreatIntelligence
     dataTypes:
       - ThreatIntelligenceIndicator
@@ -28,48 +28,53 @@ query: |
   let dt_lookBack = 1h;
   let ioc_lookBack = 14d;
   let emailregex = @'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$';
+  let OfficeEvents = materialize(
+    OfficeActivity
+    | where isnotempty(UserId)
+    | where TimeGenerated >= ago(dt_lookBack)
+    | where UserId matches regex emailregex
+    | project-rename  OfficeActivity_TimeGenerated = TimeGenerated);
+  let OfficeActivityUPNs = OfficeEvents | distinct UserId = tolower(UserId) | summarize make_list(UserId);
   ThreatIntelIndicators
-  //Filtering the table for Email related IOCs
   | extend IndicatorType = replace(@"\[|\]|\""", "", tostring(split(ObservableKey, ":", 0)))
   | where isnotempty(IndicatorType) and IndicatorType == "email-addr"
   | extend EmailSenderAddress = ObservableValue
   | extend EmailSourceDomain = substring(EmailSenderAddress, indexof(EmailSenderAddress, "@") + 1, strlen(EmailSenderAddress) - indexof(EmailSenderAddress, "@") - 1)
   | extend TrafficLightProtocolLevel = tostring(parse_json(AdditionalFields).TLPLevel)
-  | extend IndicatorId = tostring(split(Id, "--")[2])
   | where isnotempty(EmailSenderAddress)
+  | extend Url = iff(ObservableKey == "url:value", ObservableValue, "")
   | where TimeGenerated >= ago(ioc_lookBack)
+  // | where tolower(EmailSenderAddress) in (OfficeActivityUPNs)
   | summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by Id
   | where IsActive == true and ValidUntil > now()
+  | extend Description = tostring(parse_json(Data).description)
+  | where Description !contains_cs "State: inactive;" and Description !contains_cs "State: falsepos;"
   | project-reorder *, TrafficLightProtocolLevel, EmailSenderAddress, EmailSourceDomain, Type
   // using innerunique to keep perf fast and result set low, we only need one match to indicate potential malicious activity that needs to be investigated
-  | join kind=innerunique (
-      CommonSecurityLog | where TimeGenerated >= ago(dt_lookBack) and isnotempty(DestinationUserID)
-      // Filtering PAN Logs for specific event type to match relevant email entities
-      | where DeviceVendor == "Palo Alto Networks" and  DeviceEventClassID == "wildfire" and ApplicationProtocol in ("smtp","pop3")
-      | extend DestinationUserID = tolower(DestinationUserID)
-      | where DestinationUserID matches regex emailregex
-      | extend CommonSecurityLog_TimeGenerated = TimeGenerated
-  )
-  on $left.EmailSenderAddress == $right.DestinationUserID
-  | where CommonSecurityLog_TimeGenerated < ValidUntil
+  | join kind=innerunique (OfficeEvents) on $left.EmailSenderAddress == $right.UserId
+  | where OfficeActivity_TimeGenerated < ValidUntil
+  | summarize OfficeActivity_TimeGenerated = arg_max(OfficeActivity_TimeGenerated, *) by Id, UserId
   | extend Description = tostring(parse_json(Data).description)
   | extend ActivityGroupNames = extract(@"ActivityGroup:(\S+)", 1, tostring(parse_json(Data).labels))
-  | summarize CommonSecurityLog_TimeGenerated = arg_max(CommonSecurityLog_TimeGenerated, *) by Id, DestinationUserID
-  | project CommonSecurityLog_TimeGenerated, Description, ActivityGroupNames, Id, ValidUntil, Confidence, EmailSenderAddress, DestinationUserID, DeviceEventClassID, LogSeverity, DeviceAction, SourceIP, SourcePort,
-  DestinationIP, DestinationPort, Protocol, ApplicationProtocol//, Url,  EmailRecipient, EmailSourceDomain, EmailSourceIpAddress, EmailSubject, FileHashValue, FileHashType,
-  | extend timestamp = CommonSecurityLog_TimeGenerated
+  | project OfficeActivity_TimeGenerated, Description, ActivityGroupNames, Id, ValidUntil, Confidence, EmailSenderAddress, EmailSourceDomain, UserId, ClientIP, Operation, UserType, RecordType, OfficeWorkload, Parameters, Url//, EmailSourceIpAddress, EmailSubject, FileHashValue, FileHashType
+  | extend Name = tostring(split(UserId, '@', 0)[0]), UPNSuffix = tostring(split(UserId, '@', 1)[0])
+  | extend timestamp = OfficeActivity_TimeGenerated
 entityMappings:
   - entityType: Account
     fieldMappings:
+      - identifier: FullName
+        columnName: UserId
       - identifier: Name
-        columnName: DestinationUserID
+        columnName: Name
+      - identifier: UPNSuffix
+        columnName: UPNSuffix
   - entityType: IP
     fieldMappings:
       - identifier: Address
-        columnName: SourceIP
+        columnName: ClientIP
   - entityType: URL
     fieldMappings:
       - identifier: Url
         columnName: Url
-version: 1.2.6
+version: 1.2.8
 kind: Scheduled
